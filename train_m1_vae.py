@@ -41,6 +41,25 @@ labels = df[label_column]  # target/label for model training
 conditions = df[condition_column]  # target/label for model training
 
 
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+# # Calculate the percentage of NaN values in each column
+nan_percentage = numerical_data.isna().sum(axis=0) / numerical_data.shape[0] * 100
+
+# Plot the histogram of the percentage of NaN values per column
+plt.figure(figsize=(10, 6))
+plt.hist(nan_percentage, bins=50, edgecolor='k', alpha=0.7)
+plt.title("Histogram of Percentage of NaN Values Per Column")
+plt.xlabel("Percentage of NaN values")  
+plt.ylabel("Number of Columns")
+plt.grid(True)
+
+plt.show()
+
+
+
 # Select subset of columns where NaN percentage is less than 10%
 selected_columns = nan_percentage[nan_percentage < 10].index.tolist()
 
