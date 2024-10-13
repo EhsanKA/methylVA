@@ -136,7 +136,11 @@ test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
 
 
 # This saves both X (features) and y (labels) for train, val, and test datasets
+from pathlib import Path
 dataset_path = 'data/m1/'
+directory_path = Path(dataset_path)
+directory_path.mkdir(parents=True, exist_ok=True)
+
 torch.save(train_dataset.tensors, f'{dataset_path}train_dataset_tensors.pt')  # Saves (X_train, y_train)
 torch.save(val_dataset.tensors, f'{dataset_path}val_dataset_tensors.pt')      # Saves (X_val, y_val)
 torch.save(test_dataset.tensors, f'{dataset_path}test_dataset_tensors.pt')    # Saves (X_test, y_test)
