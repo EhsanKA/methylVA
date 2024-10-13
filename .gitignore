@@ -1,5 +1,7 @@
 data/
 lightning_logs/
+m1_vae_script.sh
+output_m1_vae.stdlog
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
