@@ -33,8 +33,8 @@ def time_tracker(func):
     return wrapper
 
 # Load or prepare data
-numerical_data_path = '/data/v2/numerical_data_filtered.csv'
-metadata_path = '/data/v2/metadata_with_labels.csv'
+numerical_data_path = 'data/v2/numerical_data_filtered.csv'
+metadata_path = 'data/v2/metadata_with_labels.csv'
 
 print("Checking if preprocessed data exists...")
 if os.path.exists(numerical_data_path) and os.path.exists(metadata_path):
@@ -61,22 +61,18 @@ else:
         axis=1
     )
 
-    df[label_column].fillna('no_label', inplace=True)
-    labels = df[label_column]
-    sex_conditions = df[sex_condition_column]
-    age_conditions = df[age_condition_column]
+    # Fix FutureWarning
+    df[label_column] = df[label_column].fillna('no_label')
+
+    # Fix PerformanceWarning
+    labels_encoded = df[label_column].astype('category').cat.codes
+    df = pd.concat([df, labels_encoded.rename('labels_encoded')], axis=1)
+    df = df.reset_index()
 
     nan_percentage = numerical_data.isna().sum() / numerical_data.shape[0] * 100
     selected_columns = nan_percentage[nan_percentage < 10].index.tolist()
     numerical_data_filtered = numerical_data[selected_columns]
 
-    label_encoder = LabelEncoder()
-    labels_encoded = label_encoder.fit_transform(labels.values)
-
-    df['labels_encoded'] = labels_encoded
-    df.reset_index(inplace=True)
-
-    print("Saving preprocessed numerical data and metadata to CSV files...")
     numerical_data_filtered.to_csv(numerical_data_path, index=False)
     metadata_columns_with_labels = metadata_columns + [label_column, sex_condition_column, age_condition_column, 'labels_encoded']
     df_metadata = df[metadata_columns_with_labels]
