@@ -25,6 +25,7 @@ set_seed(42)
 def time_tracker(func):
     def wrapper(*args, **kwargs):
         start_time = time.time()
+        print(f"Starting {func.__name__}...")
         result = func(*args, **kwargs)
         end_time = time.time()
         print(f"{func.__name__} took {end_time - start_time:.2f} seconds to execute.")
@@ -35,10 +36,13 @@ def time_tracker(func):
 numerical_data_path = '/data/v2/numerical_data_filtered.csv'
 metadata_path = '/data/v2/metadata_with_labels.csv'
 
+print("Checking if preprocessed data exists...")
 if os.path.exists(numerical_data_path) and os.path.exists(metadata_path):
+    print("Loading preprocessed data from CSV files...")
     numerical_data_filtered = pd.read_csv(numerical_data_path)
     df_metadata = pd.read_csv(metadata_path)
 else:
+    print("Preprocessed data not found. Loading raw data and processing...")
     data_files = [f'data/v2_HM450/methyl_scores_v2_HM450k_{i}.pkl' for i in range(1, 12)]
     dataframes = [pd.read_pickle(file, compression="bz2") for file in data_files]
     df = pd.concat(dataframes, axis=0)
@@ -72,10 +76,12 @@ else:
     df['labels_encoded'] = labels_encoded
     df.reset_index(inplace=True)
 
+    print("Saving preprocessed numerical data and metadata to CSV files...")
     numerical_data_filtered.to_csv(numerical_data_path, index=False)
     metadata_columns_with_labels = metadata_columns + [label_column, sex_condition_column, age_condition_column, 'labels_encoded']
     df_metadata = df[metadata_columns_with_labels]
     df_metadata.to_csv(metadata_path, index=False)
+    print("Data saved successfully.")
 
 # Split data into training, validation, and test sets
 @time_tracker
@@ -83,6 +89,7 @@ def split_data(numerical_data_filtered, labels_encoded, split_sizes, random_stat
     splits = {}
     for size in split_sizes:
         if size <= len(numerical_data_filtered):
+            print(f"Splitting data with size: {size}")
             splitter = StratifiedShuffleSplit(n_splits=1, train_size=size, random_state=random_state)
             for train_idx, _ in splitter.split(numerical_data_filtered, labels_encoded):
                 splits[size] = numerical_data_filtered.iloc[train_idx], [labels_encoded[i] for i in train_idx]
@@ -90,6 +97,7 @@ def split_data(numerical_data_filtered, labels_encoded, split_sizes, random_stat
 
 @time_tracker
 def train_val_test_split(data, labels, random_state=42):
+    print("Splitting data into training, validation, and test sets...")
     X_train, X_remaining, y_train, y_remaining = train_test_split(
         data, labels, test_size=0.3, random_state=random_state, stratify=labels
     )
@@ -102,6 +110,7 @@ def train_val_test_split(data, labels, random_state=42):
 def scale_and_save_data(train_val_test_splits, output_path):
     scaler = StandardScaler()
     for key, (X_train, X_val, X_test, y_train, y_val, y_test) in train_val_test_splits.items():
+        print(f"Scaling and saving data for split: {key}")
         X_train_scaled = scaler.fit_transform(X_train)
         X_val_scaled = scaler.transform(X_val)
         X_test_scaled = scaler.transform(X_test)
@@ -125,9 +134,11 @@ def scale_and_save_data(train_val_test_splits, output_path):
         torch.save(train_dataset.tensors, f'{dataset_path}train_dataset_tensors.pt')
         torch.save(val_dataset.tensors, f'{dataset_path}val_dataset_tensors.pt')
         torch.save(test_dataset.tensors, f'{dataset_path}test_dataset_tensors.pt')
+        print(f"Data for split {key} saved successfully.")
 
 @time_tracker
 def create_dataloaders(X_train, X_val, X_test, y_train, y_val, y_test, batch_size=16, random_state=42):
+    print("Creating dataloaders...")
     scaler = StandardScaler()
     train_dataset = TensorDataset(
         torch.tensor(scaler.fit_transform(X_train), dtype=torch.float32),
@@ -146,15 +157,18 @@ def create_dataloaders(X_train, X_val, X_test, y_train, y_val, y_test, batch_siz
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, worker_init_fn=lambda _: np.random.seed(random_state))
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, worker_init_fn=lambda _: np.random.seed(random_state))
 
+    print("Dataloaders created successfully.")
     return train_loader, val_loader, test_loader
 
 # Main execution
+print("Starting main execution...")
 split_sizes = [len(numerical_data_filtered), 20000, 10000, 5000]
 splits = split_data(numerical_data_filtered, labels_encoded, split_sizes)
 
 # Generate shuffled data for null hypothesis
 @time_tracker
 def generate_shuffled_data(numerical_data_filtered, size, random_state=42):
+    print("Generating shuffled data for null hypothesis...")
     flattened_values = numerical_data_filtered.values.flatten()
     np.random.seed(random_state)
     np.random.shuffle(flattened_values)
@@ -178,3 +192,4 @@ train_loader, val_loader, test_loader = create_dataloaders(X_train, X_val, X_tes
 print(f"Training set size: {X_train.shape}")
 print(f"Validation set size: {X_val.shape}")
 print(f"Test set size: {X_test.shape}")
+print("Main execution finished.")
