@@ -158,7 +158,7 @@ def create_dataloaders(X_train, X_val, X_test, y_train, y_val, y_test, batch_siz
 
 # Main execution
 print("Starting main execution...")
-split_sizes = [len(numerical_data_filtered), 20000, 10000, 5000]
+split_sizes = [5000, 10000, 20000, len(numerical_data_filtered)]
 splits = split_data(numerical_data_filtered, labels_encoded, split_sizes)
 
 # Generate shuffled data for null hypothesis
