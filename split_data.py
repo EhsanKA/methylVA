@@ -151,6 +151,21 @@ def create_dataloaders(X_train, X_val, X_test, y_train, y_val, y_test, batch_siz
 # Main execution
 split_sizes = [len(numerical_data_filtered), 20000, 10000, 5000]
 splits = split_data(numerical_data_filtered, labels_encoded, split_sizes)
+
+# Generate shuffled data for null hypothesis
+@time_tracker
+def generate_shuffled_data(numerical_data_filtered, size, random_state=42):
+    flattened_values = numerical_data_filtered.values.flatten()
+    np.random.seed(random_state)
+    np.random.shuffle(flattened_values)
+    shuffled_matrix = flattened_values.reshape(numerical_data_filtered.shape)
+    shuffled_data = pd.DataFrame(shuffled_matrix, columns=numerical_data_filtered.columns).sample(n=size, random_state=random_state).reset_index(drop=True)
+    shuffled_labels = [0] * size  # Use dummy labels to represent null hypothesis
+    return shuffled_data, shuffled_labels
+
+shuffled_data_10000, shuffled_labels_10000 = generate_shuffled_data(numerical_data_filtered, 10000)
+splits['shuffled_10000'] = (shuffled_data_10000, shuffled_labels_10000)
+
 train_val_test_splits = {
     key: train_val_test_split(data, labels) for key, (data, labels) in splits.items()
 }
