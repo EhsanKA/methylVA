@@ -271,8 +271,10 @@ pl.seed_everything(42)
 # Initialize the VAE Lightning model
 input_dim = train_tensors[0].shape[1]  # The number of input features
 # input_dim = X_train_tensor.shape[1]  # The number of input features
-latent_dim = 256  # Latent dimension size, can be tuned
-hidden_dims = [2048, 1024, 512]
+latent_dim = 1024  # Latent dimension size, can be tuned
+# hidden_dims = [2048, 1024, 512]
+hidden_dims = [10000, 5000, 2048]
+
 dropout_rate = 0.2
 lr = 1e-6
 
