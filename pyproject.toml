@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "methylVA"
 version = "0.1.0"
-description = "A python package for diseases classification based on methylation data using VAE to embed the high dimensions of data and classify them using a MLP. "
+description = "A python package for diseases classification based on methylation data using VAE to embed the high dimensions of the data and classify them using a MLP. "
 readme = "README.md"
 requires-python = ">=3.10"
 # license = {file = "LICENSE.txt"}
