@@ -1,10 +1,16 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import pytorch_lightning as pl
+from methylVA.training.trainer_utils import replace_nan_with_mean
+
+
 class VAE(nn.Module):
     def __init__(self, input_dim, latent_dim, hidden_dims=[2048,1024,512], dropout_rate=0.2):
         super(VAE, self).__init__()
         
         # Encoder
         self.encoder_layers = self.build_layers(input_dim, hidden_dims, dropout_rate)
-        # self.fc1 = nn.Linear(input_dim, hidden_dim)
         self.fc_mu = nn.Linear(hidden_dims[-1], latent_dim)  # for mean
         self.fc_logvar = nn.Linear(hidden_dims[-1], latent_dim)  # for log variance
         
@@ -12,8 +18,7 @@ class VAE(nn.Module):
         decoder_hidden_dims = hidden_dims[::-1]
         self.decoder_layers =self.build_layers(latent_dim, decoder_hidden_dims, dropout_rate)
         self.fc_output = nn.Linear(hidden_dims[0], input_dim)
-        # self.fc3 = nn.Linear(latent_dim, hidden_dim)
-        # self.fc4 = nn.Linear(hidden_dim, input_dim)
+
 
     def build_layers(self, input_dim, hidden_dims, dropout_rate):
         layers = []
@@ -106,10 +111,20 @@ class VAE_Lightning(pl.LightningModule):
         x_hat, _, _ = self.model(x_filled)
 
         # Step 4: Use the original x (with NaNs) and mask to calculate the loss
-        loss = self._vae_loss(x, x_hat, mu, logvar, mask)
+        loss, recon_loss, kl_loss = self._vae_loss(x, x_hat, mu, logvar, mask)
+
         print(f"Training loss: {loss.item()}")
 
         self.log('train_loss', loss, on_step=False, on_epoch=True)
+        self.log('train_recon_loss', recon_loss, on_step=False, on_epoch=True)
+        self.log('train_kl_loss', kl_loss, on_step=False, on_epoch=True)
+
+        # # Calculate Pearson correlation between input and output
+        # corr = self.pearson_correlation(x, x_hat, mask)
+        # # Log both step-wise and epoch-wise
+        # self.log('train_corr_step', corr, on_step=True, on_epoch=False)
+        # self.log('train_corr_epoch', corr, on_step=False, on_epoch=True)
+
         return loss
 
     
@@ -128,10 +143,12 @@ class VAE_Lightning(pl.LightningModule):
         x_hat, _, _ = self.model(x_filled)
 
         # Step 4: Use the original x (with NaNs) and mask to calculate the loss
-        loss = self._vae_loss(x, x_hat, mu, logvar, mask)
+        loss, recon_loss, kl_loss = self._vae_loss(x, x_hat, mu, logvar, mask)
         print(f"Validation loss: {loss.item()}")
 
         self.log('val_loss', loss, on_step=False, on_epoch=True)
+        self.log('val_recon_loss', recon_loss, on_step=False, on_epoch=True)
+        self.log('val_kl_loss', kl_loss, on_step=False, on_epoch=True)
   
 
     def _vae_loss(self, original_x, x_hat, mu, logvar, mask):
@@ -142,9 +159,42 @@ class VAE_Lightning(pl.LightningModule):
         kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         kl_loss = kl_loss / original_x.shape[0]  # Normalize by batch size or apply weighting
     
-        return recon_loss + kl_loss
+        return recon_loss + kl_loss, recon_loss, kl_loss
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.model.parameters(), lr=self.lr)
     
-    
+    def pearson_correlation(original_x, x_hat, mask=None):
+        """
+        Calculates the Pearson correlation between the input and the output vectors.
+
+        Parameters:
+        - original_x: torch.Tensor
+            The original input tensor.
+        - x_hat: torch.Tensor
+            The reconstructed output tensor.
+        - mask: torch.Tensor, optional
+            A boolean mask to ignore NaN values or irrelevant elements.
+
+        Returns:
+        - correlation: float
+            The Pearson correlation coefficient between original_x and x_hat.
+        """
+        if mask is not None:
+            original_x = original_x[mask]
+            x_hat = x_hat[mask]
+        
+        # Calculate mean and standard deviation
+        mean_x = torch.mean(original_x)
+        mean_x_hat = torch.mean(x_hat)
+        
+        std_x = torch.std(original_x)
+        std_x_hat = torch.std(x_hat)
+        
+        # Calculate covariance
+        covariance = torch.mean((original_x - mean_x) * (x_hat - mean_x_hat))
+        
+        # Calculate Pearson correlation
+        correlation = covariance / (std_x * std_x_hat)
+        
+        return correlation.item()
