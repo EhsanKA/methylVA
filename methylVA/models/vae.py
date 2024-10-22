@@ -80,13 +80,14 @@ class VAE(nn.Module):
 
 
 class VAE_Lightning(pl.LightningModule):
-    def __init__(self, input_dim=485577, latent_dim=128, hidden_dims=[2048, 1024, 512], dropout_rate=0.2, lr=1e-6):
+    def __init__(self, input_dim=485577, latent_dim=128, hidden_dims=[2048, 1024, 512], dropout_rate=0.2, lr=1e-6, kl_weight=1.0):
         super(VAE_Lightning, self).__init__()
         
         self.save_hyperparameters()  # Save hyperparameters for checkpointing
 
         self.model = VAE(input_dim, latent_dim, hidden_dims, dropout_rate)
         self.lr = lr
+        self.kl_weight = kl_weight
     
     def forward(self, x):
         mu, logvar = self.model.encode(x)
@@ -111,7 +112,7 @@ class VAE_Lightning(pl.LightningModule):
         x_hat, _, _ = self.model(x_filled)
 
         # Step 4: Use the original x (with NaNs) and mask to calculate the loss
-        loss, recon_loss, kl_loss = self._vae_loss(x, x_hat, mu, logvar, mask)
+        loss, recon_loss, kl_loss = self._vae_loss(x, x_hat, mu, logvar, mask, self.kl_weight)
 
         print(f"Training loss: {loss.item()}")
 
@@ -143,7 +144,7 @@ class VAE_Lightning(pl.LightningModule):
         x_hat, _, _ = self.model(x_filled)
 
         # Step 4: Use the original x (with NaNs) and mask to calculate the loss
-        loss, recon_loss, kl_loss = self._vae_loss(x, x_hat, mu, logvar, mask)
+        loss, recon_loss, kl_loss = self._vae_loss(x, x_hat, mu, logvar, mask, self.kl_weight)
         print(f"Validation loss: {loss.item()}")
 
         self.log('val_loss', loss, on_step=False, on_epoch=True)
@@ -151,14 +152,16 @@ class VAE_Lightning(pl.LightningModule):
         self.log('val_kl_loss', kl_loss, on_step=False, on_epoch=True)
   
 
-    def _vae_loss(self, original_x, x_hat, mu, logvar, mask):
+    def _vae_loss(self, original_x, x_hat, mu, logvar, mask, kl_weight=1.0):
         # Apply mask to ignore NaN values in the loss calculation
         recon_loss = F.mse_loss(x_hat[mask], original_x[mask], reduction='mean')
     
         # Scale the KL divergence to balance the losses
         kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         kl_loss = kl_loss / original_x.shape[0]  # Normalize by batch size or apply weighting
-    
+        
+        kl_loss = kl_weight * kl_loss
+
         return recon_loss + kl_loss, recon_loss, kl_loss
 
     def configure_optimizers(self):

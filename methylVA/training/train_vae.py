@@ -19,6 +19,7 @@ def train_vae(train_config):
     # Load the training, validation, and test datasets from the specified paths
     input_dir = train_config['input_dir']
     batch_size = train_config['batch_size']
+    kl_weight = train_config.get('kl_weight', 1.0)
     
     # Loading data splits
     split_dirs = ['train', 'val', 'test']
@@ -81,7 +82,8 @@ def train_vae(train_config):
         latent_dim=latent_dim,
         hidden_dims=hidden_dims,
         dropout_rate=dropout_rate,
-        lr=learning_rate
+        lr=learning_rate,
+        kl_weight=kl_weight
     )
 
     # Set up callbacks and loggers for training
