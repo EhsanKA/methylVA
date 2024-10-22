@@ -19,6 +19,7 @@ def generate_random_data_pipeline(config):
     variance = random_data_config['variance']
     random_state = config['set_seed']
     regenerate = random_data_config['regenerate']
+    zero_cols = random_data_config.get('zero_cols', 0)
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     matrix_output_path = Path(output_dir).joinpath(matrix_name)
@@ -36,6 +37,9 @@ def generate_random_data_pipeline(config):
                                                                 seed=random_state
                                                                 )
     
+    if zero_cols>0:
+        random_matrix[:, :zero_cols] = 0
+
     pd.DataFrame(random_matrix).to_pickle(matrix_output_path)
     pd.DataFrame(random_labels).to_pickle(label_output_path)
     print(f"Random data generated and saved at: {matrix_output_path}, {label_output_path}")
@@ -72,41 +76,41 @@ def split_random_data_pipeline(config):
 
 # # Subset Creation Step
 # def create_subset_pipeline(config):
-#     subset_config = config['subset']
-#     input_path = subset_config['input_path']
-#     output_path = subset_config['output_path']
-#     size = subset_config['size']
+    subset_config = config['subset']
+    input_path = subset_config['input_path']
+    output_path = subset_config['output_path']
+    size = subset_config['size']
 
-#     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-#     create_subset(input_path, output_path, size=size)
-#     print(f"Subset of size {size} created and saved at: {output_path}")
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    create_subset(input_path, output_path, size=size)
+    print(f"Subset of size {size} created and saved at: {output_path}")
 
 # # Scaling Step
 # def scale_data_pipeline(config):
-#     scale_config = config['scale']
-#     input_path = scale_config['input_path']
-#     output_path = scale_config['output_path']
+    scale_config = config['scale']
+    input_path = scale_config['input_path']
+    output_path = scale_config['output_path']
 
-#     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-#     scale_data(input_path, output_path)
-#     print(f"Scaled data saved at: {output_path}")
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    scale_data(input_path, output_path)
+    print(f"Scaled data saved at: {output_path}")
 
 # # Split Train/Val/Test Step
 # def split_data_pipeline(config):
     
-#     # split_config = config['train_test_split']
-#     # input_path = split_config['input_path']
-#     # output_dir = split_config['output_dir']
-#     # test_size = split_config['test_size']
-#     # val_size = split_config['val_size']
-#     # random_state = split_config['random_state']
+    # split_config = config['train_test_split']
+    # input_path = split_config['input_path']
+    # output_dir = split_config['output_dir']
+    # test_size = split_config['test_size']
+    # val_size = split_config['val_size']
+    # random_state = split_config['random_state']
 
-#     # train_val_test_split(input_path,
-#     #                      output_dir,
-#     #                      test_size=test_size,
-#     #                      val_size=val_size,random_state=random_state)
-#     # print(f"Train, validation, and test sets created and saved at: {output_dir}")
-#     pass
+    # train_val_test_split(input_path,
+    #                      output_dir,
+    #                      test_size=test_size,
+    #                      val_size=val_size,random_state=random_state)
+    # print(f"Train, validation, and test sets created and saved at: {output_dir}")
+    pass
 
 # Training Step
 def train_vae_pipeline(config):
