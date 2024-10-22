@@ -80,7 +80,7 @@ def train_val_test_split(data, labels, random_state=42):
 
 
 @time_tracker
-def scale_and_save_data(train_val_test_splits, output_path):
+def scale_and_save_data(train_val_test_splits, output_path, split_data_value=10000):
     scaler = StandardScaler()
     X_train, X_val, X_test, y_train, y_val, y_test = train_val_test_splits
     print(f"Scaling and saving data...")
