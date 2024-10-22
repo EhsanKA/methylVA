@@ -95,7 +95,6 @@ def load_data_tensor(train_config):
 def load_train_test_data(train_config):
     # Load the training, validation, and test datasets from the specified paths
     input_dir = train_config['input_dir']
-    batch_size = train_config['batch_size']
     input_dir = "../" + input_dir
     
     # Loading data splits
