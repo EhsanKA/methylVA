@@ -1,0 +1,8 @@
+dropout_rate: 0.0
+hidden_dims:
+- 10000
+- 5000
+- 2048
+input_dim: 20000
+latent_dim: 1024
+lr: 1.0e-06
