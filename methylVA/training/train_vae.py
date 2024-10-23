@@ -76,6 +76,8 @@ def train_vae(train_config):
     hidden_dims = train_config['hidden_dims']
     dropout_rate = train_config['dropout_rate']
     learning_rate = train_config['learning_rate']
+    activation = train_config.get('activation', 'relu')
+    batch_norm = train_config.get('batch_norm', False)
 
     vae_model = VAE_Lightning(
         input_dim=input_dim,
@@ -83,7 +85,9 @@ def train_vae(train_config):
         hidden_dims=hidden_dims,
         dropout_rate=dropout_rate,
         lr=learning_rate,
-        kl_weight=kl_weight
+        kl_weight=kl_weight,
+        activation=activation,
+        batch_norm=batch_norm
     )
 
     # Set up callbacks and loggers for training
