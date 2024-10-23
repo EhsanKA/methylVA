@@ -1,4 +1,4 @@
-from methylVA.utils.common import time_tracker
+from methylVA.utils.decorators import time_tracker
 from sklearn.model_selection import train_test_split
 import pandas as pd
 
