@@ -20,6 +20,7 @@ def train_vae(train_config):
     input_dir = train_config['input_dir']
     batch_size = train_config['batch_size']
     kl_weight = train_config.get('kl_weight', 1.0)
+    patience = train_config.get('early_stopping_patience', None)
     
     # Loading data splits
     split_dirs = ['train', 'val', 'test']
@@ -109,18 +110,24 @@ def train_vae(train_config):
         filename='vae-{epoch:02d}-{val_loss:.2f}'
     )
     
-    early_stopping_callback = EarlyStopping(
-        monitor=checkpoint_monitor,
-        patience=train_config.get('early_stopping_patience', 5)
-    )
-
     loss_history_callback = LossHistoryCallback()
+
+    callbacks = [checkpoint_callback, loss_history_callback]
+
+    if patience:
+        early_stopping_callback = EarlyStopping(
+            monitor=checkpoint_monitor,
+            patience=train_config.get('early_stopping_patience', patience)
+        )
+        callbacks.append(early_stopping_callback)
+        
+
 
     # Setting up the trainer
     trainer = pl.Trainer(
         max_epochs=train_config['max_epochs'],
         gradient_clip_val=train_config.get('gradient_clip_val', 0.1),
-        callbacks=[checkpoint_callback, early_stopping_callback, loss_history_callback],
+        callbacks=callbacks,
         precision=32,
         accelerator='gpu' if torch.cuda.is_available() else 'cpu',
         devices=1,
