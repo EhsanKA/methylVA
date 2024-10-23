@@ -6,25 +6,37 @@ from methylVA.training.trainer_utils import replace_nan_with_mean
 
 
 class VAE(nn.Module):
-    def __init__(self, input_dim, latent_dim, hidden_dims=[2048,1024,512], dropout_rate=0.2):
+    def __init__(self, input_dim, latent_dim, hidden_dims=[2048,1024,512], dropout_rate=0.2,
+                  activation='tanh', batch_norm=False):
         super(VAE, self).__init__()
         
         # Encoder
         self.encoder_layers = self.build_layers(input_dim, hidden_dims, dropout_rate)
+        self.activation = activation
+        self.batch_norm = batch_norm
+
         self.fc_mu = nn.Linear(hidden_dims[-1], latent_dim)  # for mean
         self.fc_logvar = nn.Linear(hidden_dims[-1], latent_dim)  # for log variance
         
         # Decoder
         decoder_hidden_dims = hidden_dims[::-1]
-        self.decoder_layers =self.build_layers(latent_dim, decoder_hidden_dims, dropout_rate)
+        self.decoder_layers =self.build_layers(latent_dim, decoder_hidden_dims, dropout_rate,
+                                                self.activation, self.batch_norm) 
         self.fc_output = nn.Linear(hidden_dims[0], input_dim)
 
 
-    def build_layers(self, input_dim, hidden_dims, dropout_rate):
+    def build_layers(self, input_dim, hidden_dims, dropout_rate, activation='tanh',
+                      batch_norm=False):
         layers = []
         for h_dim in hidden_dims:
             layers.append(nn.Linear(input_dim, h_dim))
-            layers.append(nn.ReLU())
+            if batch_norm:
+                layers.append(nn.BatchNorm1d(h_dim))
+            if activation == 'tanh':
+                layers.append(nn.Tanh())
+            elif activation == 'relu':
+                layers.append(nn.ReLU())
+            layers.append(nn.Tanh())
             layers.append(nn.Dropout(dropout_rate))
             input_dim = h_dim
         return nn.Sequential(*layers)
@@ -62,7 +74,6 @@ class VAE(nn.Module):
 
     def decode(self, z):
         h = self.decoder_layers(z)
-        # h = F.relu(self.fc3(z))
         return torch.sigmoid(self.fc_output(h))
     
     def forward(self, x):
@@ -80,12 +91,21 @@ class VAE(nn.Module):
 
 
 class VAE_Lightning(pl.LightningModule):
-    def __init__(self, input_dim=485577, latent_dim=128, hidden_dims=[2048, 1024, 512], dropout_rate=0.2, lr=1e-6, kl_weight=1.0):
+    def __init__(self,
+                 input_dim=485577,
+                 latent_dim=128,
+                 hidden_dims=[2048, 1024, 512],
+                 dropout_rate=0.2,
+                 lr=1e-6,
+                 kl_weight=1.0,
+                 activation='tanh',
+                 batch_norm=False):
         super(VAE_Lightning, self).__init__()
         
         self.save_hyperparameters()  # Save hyperparameters for checkpointing
 
-        self.model = VAE(input_dim, latent_dim, hidden_dims, dropout_rate)
+        self.model = VAE(input_dim, latent_dim, hidden_dims, dropout_rate,
+                         activation='tanh', batch_norm=False)
         self.lr = lr
         self.kl_weight = kl_weight
     
