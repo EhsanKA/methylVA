@@ -6,6 +6,6 @@ hidden_dims:
 - 5000
 - 2048
 input_dim: 20000
-kl_weight: 1.0
+kl_weight: 10.0
 latent_dim: 1024
-lr: 0.0001
+lr: 1.0e-05
