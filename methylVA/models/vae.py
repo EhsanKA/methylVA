@@ -36,7 +36,9 @@ class VAE(nn.Module):
                 layers.append(nn.Tanh())
             elif activation == 'relu':
                 layers.append(nn.ReLU())
-            layers.append(nn.Tanh())
+            elif activation == 'Silu':
+                layers.append(nn.SiLU())
+            # layers.append(nn.Tanh())
             layers.append(nn.Dropout(dropout_rate))
             input_dim = h_dim
         return nn.Sequential(*layers)
@@ -105,7 +107,7 @@ class VAE_Lightning(pl.LightningModule):
         self.save_hyperparameters()  # Save hyperparameters for checkpointing
 
         self.model = VAE(input_dim, latent_dim, hidden_dims, dropout_rate,
-                         activation='tanh', batch_norm=False)
+                         activation=activation, batch_norm=False)
         self.lr = lr
         self.kl_weight = kl_weight
     
