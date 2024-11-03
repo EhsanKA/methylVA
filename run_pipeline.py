@@ -2,6 +2,7 @@ import yaml
 from pathlib import Path
 from methylVA.utils.random_data import generate_random_noise_matrix, split_random_data_and_save
 from methylVA.training.train_vae import train_vae
+from methylVA.data_processing.split_data import train_val_test_split
 from methylVA.utils.set_seed import set_seed
 import pandas as pd 
 from methylVA.utils.common import load_config
@@ -76,24 +77,24 @@ def split_random_data_pipeline(config):
 
 # # Subset Creation Step
 # def create_subset_pipeline(config):
-    subset_config = config['subset']
-    input_path = subset_config['input_path']
-    output_path = subset_config['output_path']
-    size = subset_config['size']
+#     subset_config = config['subset']
+#     input_path = subset_config['input_path']
+#     output_path = subset_config['output_path']
+#     size = subset_config['size']
 
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    create_subset(input_path, output_path, size=size)
-    print(f"Subset of size {size} created and saved at: {output_path}")
+#     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+#     train_val_test_split(input_path, output_path, size=size)
+#     print(f"Subset of size {size} created and saved at: {output_path}")
 
 # # Scaling Step
 # def scale_data_pipeline(config):
-    scale_config = config['scale']
-    input_path = scale_config['input_path']
-    output_path = scale_config['output_path']
+#     scale_config = config['scale']
+#     input_path = scale_config['input_path']
+#     output_path = scale_config['output_path']
 
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    scale_data(input_path, output_path)
-    print(f"Scaled data saved at: {output_path}")
+#     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+#     scale_data(input_path, output_path)
+#     print(f"Scaled data saved at: {output_path}")
 
 # # Split Train/Val/Test Step
 # def split_data_pipeline(config):
