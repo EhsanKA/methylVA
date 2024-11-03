@@ -27,12 +27,13 @@ training_vae:
   checkpoint_monitor: 'val_loss'
   checkpoint_mode: 'min'
   hidden_dims: [10000, 5000, 2048]
-  latent_dim: 1024
+  latent_dim: 10
   batch_size: 16
   dropout_rate: 0.0
   learning_rate: 1.0e-5
-  max_epochs: 20
-  kl_weight: 10.0
+  max_epochs: 200
+  # early_stopping_patience: 10
+  kl_weight: 1.0
   seed: 42
   activation: 'tanh'
   batch_norm: True
