@@ -6,6 +6,7 @@ from methylVA.data_processing.split_data import train_val_test_split
 from methylVA.utils.set_seed import set_seed
 import pandas as pd 
 from methylVA.utils.common import load_config
+from methylVA.data_processing.preprocessing import select_HV_cpgs
 
 
 # Generate Random Data Step
@@ -111,7 +112,7 @@ def split_random_data_pipeline(config):
     #                      test_size=test_size,
     #                      val_size=val_size,random_state=random_state)
     # print(f"Train, validation, and test sets created and saved at: {output_dir}")
-    pass
+    # pass
 
 # Training Step
 def train_vae_pipeline(config):
@@ -125,12 +126,12 @@ def run_pipeline(config_path):
     config = load_config(config_path)
     set_seed(config['set_seed'])
 
-    # Check and execute each step based on config file
-    if 'random_data' in config:
-        generate_random_data_pipeline(config)
+    # # Check and execute each step based on config file
+    # if 'random_data' in config:
+    #     generate_random_data_pipeline(config)
 
-    if 'random_train_test_split' in config:
-        split_random_data_pipeline(config)
+    # if 'random_train_test_split' in config:
+    #     split_random_data_pipeline(config)
 
     # if 'subset' in config:
     #     create_subset_pipeline(config)
@@ -140,6 +141,9 @@ def run_pipeline(config_path):
 
     # if 'train_test_split' in config:
     #     split_data_pipeline(config)
+
+    # if 'hvcpg_selection' in config:
+    #     select_HV_cpgs(config['hvcpg_selection'])
 
     if 'training_vae' in config:
         train_vae_pipeline(config)
