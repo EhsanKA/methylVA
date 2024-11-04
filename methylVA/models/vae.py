@@ -7,7 +7,7 @@ from methylVA.training.trainer_utils import replace_nan_with_mean
 
 class VAE(nn.Module):
     def __init__(self, input_dim, latent_dim, hidden_dims=[2048,1024,512], dropout_rate=0.2,
-                  activation='tanh', batch_norm=False):
+                  activation='Silu', batch_norm=True):
         super(VAE, self).__init__()
         
         # Encoder
@@ -25,8 +25,8 @@ class VAE(nn.Module):
         self.fc_output = nn.Linear(hidden_dims[0], input_dim)
 
 
-    def build_layers(self, input_dim, hidden_dims, dropout_rate, activation='tanh',
-                      batch_norm=False):
+    def build_layers(self, input_dim, hidden_dims, dropout_rate, activation='Silu',
+                      batch_norm=True):
         layers = []
         for h_dim in hidden_dims:
             layers.append(nn.Linear(input_dim, h_dim))
@@ -94,20 +94,20 @@ class VAE(nn.Module):
 
 class VAE_Lightning(pl.LightningModule):
     def __init__(self,
-                 input_dim=485577,
+                 input_dim=5000,
                  latent_dim=128,
                  hidden_dims=[2048, 1024, 512],
                  dropout_rate=0.2,
                  lr=1e-6,
-                 kl_weight=1.0,
-                 activation='tanh',
-                 batch_norm=False):
+                 kl_weight=0.1,
+                 activation='Silu',
+                 batch_norm=True):
         super(VAE_Lightning, self).__init__()
         
         self.save_hyperparameters()  # Save hyperparameters for checkpointing
 
         self.model = VAE(input_dim, latent_dim, hidden_dims, dropout_rate,
-                         activation=activation, batch_norm=False)
+                         activation=activation, batch_norm=batch_norm)
         self.lr = lr
         self.kl_weight = kl_weight
     
@@ -138,9 +138,19 @@ class VAE_Lightning(pl.LightningModule):
 
         print(f"Training loss: {loss.item()}")
 
-        self.log('train_loss', loss, on_step=False, on_epoch=True)
-        self.log('train_recon_loss', recon_loss, on_step=False, on_epoch=True)
-        self.log('train_kl_loss', kl_loss, on_step=False, on_epoch=True)
+        self.log('Loss/train', loss, on_step=False, on_epoch=True)
+        self.log('BCE_loss/train', recon_loss, on_step=False, on_epoch=True)
+        self.log('KLD_loss/train', kl_loss, on_step=False, on_epoch=True)
+
+
+        # Calculate and log gradient norm
+        total_norm = 0
+        for p in self.parameters():
+            if p.grad is not None:
+                param_norm = p.grad.data.norm(2)
+                total_norm += param_norm.item() ** 2
+        total_norm = total_norm ** 0.5
+        self.log("Grad_norm/train", total_norm, on_step=True, on_epoch=True)
 
         # # Calculate Pearson correlation between input and output
         # corr = self.pearson_correlation(x, x_hat, mask)
@@ -169,15 +179,17 @@ class VAE_Lightning(pl.LightningModule):
         loss, recon_loss, kl_loss = self._vae_loss(x, x_hat, mu, logvar, mask, self.kl_weight)
         print(f"Validation loss: {loss.item()}")
 
-        self.log('val_loss', loss, on_step=False, on_epoch=True)
-        self.log('val_recon_loss', recon_loss, on_step=False, on_epoch=True)
-        self.log('val_kl_loss', kl_loss, on_step=False, on_epoch=True)
+        self.log('Loss/val', loss, on_step=False, on_epoch=True)
+        self.log('BCE_loss/val', recon_loss, on_step=False, on_epoch=True)
+        self.log('KLD_loss/val', kl_loss, on_step=False, on_epoch=True)
   
 
     def _vae_loss(self, original_x, x_hat, mu, logvar, mask, kl_weight=1.0):
         # Apply mask to ignore NaN values in the loss calculation
-        recon_loss = F.mse_loss(x_hat[mask], original_x[mask], reduction='mean')
-    
+        # recon_loss = F.mse_loss(x_hat[mask], original_x[mask], reduction='mean')
+        ## todo: change the loss to BCE loss
+        recon_loss = F.binary_cross_entropy(x_hat[mask], original_x[mask], reduction='mean')
+
         # Scale the KL divergence to balance the losses
         kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         kl_loss = kl_loss / original_x.shape[0]  # Normalize by batch size or apply weighting
