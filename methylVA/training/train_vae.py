@@ -5,80 +5,38 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning import loggers
 from methylVA.models.vae import VAE_Lightning
 from methylVA.training.trainer_utils import LossHistoryCallback
+from pytorch_lightning import loggers as pl_loggers
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 import pandas as pd
 import os
 import pickle
 from pathlib import Path
 import numpy as np
 
+from methylVA.data_processing.dataset import get_methyl_data_loaders
 
 def train_vae(train_config):
-    # Extract training configuration details from the config
-    # train_config = config['training']
-    
-    # Load the training, validation, and test datasets from the specified paths
-    input_dir = train_config['input_dir']
-    batch_size = train_config['batch_size']
+
+    # input_dir = train_config['input_dir']
+    data_loader_config = train_config['train_test_loader']
     kl_weight = train_config.get('kl_weight', 1.0)
     patience = train_config.get('early_stopping_patience', None)
-    
-    # Loading data splits
-    split_dirs = ['train', 'val', 'test']
-    loaded_data = {}
 
-    # Iterate over the splits to read the data
-    for split in split_dirs:
-        split_path = Path(input_dir).joinpath(split)
 
-        # Load features
-        with open(split_path.joinpath('features.pkl'), 'rb') as f:
-            data = pickle.load(f)
-        
-        # Load labels
-        with open(split_path.joinpath('labels.pkl'), 'rb') as f:
-            label = pickle.load(f)
-
-        # Store loaded data in a dictionary
-        loaded_data[split] = (data, label)
-
-    # Now you have loaded_data dictionary containing (features, labels) for 'train', 'val', 'test'
-    X_train, y_train = loaded_data['train']
-    X_val, y_val = loaded_data['val']
-    X_test, y_test = loaded_data['test']
-
-    del loaded_data  # Free up memory
-
-    # Convert features and labels to PyTorch tensors
-    X_train_tensor = torch.tensor(X_train.values, dtype=torch.float32)  # Assuming data is in a DataFrame
-    y_train_tensor = torch.tensor(y_train.values, dtype=torch.long) if hasattr(y_train, 'values') else torch.tensor(y_train, dtype=torch.long)
-
-    X_val_tensor = torch.tensor(X_val.values, dtype=torch.float32)
-    y_val_tensor = torch.tensor(y_val.values, dtype=torch.long) if hasattr(y_val, 'values') else torch.tensor(y_val, dtype=torch.long)
-
-    X_test_tensor = torch.tensor(X_test.values, dtype=torch.float32)
-    y_test_tensor = torch.tensor(y_test.values, dtype=torch.long) if hasattr(y_test, 'values') else torch.tensor(y_test, dtype=torch.long)
-
-    # Create TensorDataset for each split
-    train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
-    val_dataset = TensorDataset(X_val_tensor, y_val_tensor)
-    test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
-
-    # Creating DataLoaders
-    # todo: add seed for reproducibility
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, worker_init_fn=lambda _: np.random.seed(42))
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, worker_init_fn=lambda _: np.random.seed(42))
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, worker_init_fn=lambda _: np.random.seed(42))
+    train_loader, val_loader = get_methyl_data_loaders(data_loader_config)
 
     pl.seed_everything(42)
 
+    data_batch, _ = next(iter(train_loader))
+
     # Set up the VAE model
-    input_dim = X_train.shape[1]  # The number of input features
+    input_dim = data_batch.shape[1]  # The number of input features
     latent_dim = train_config['latent_dim']
     hidden_dims = train_config['hidden_dims']
     dropout_rate = train_config['dropout_rate']
     learning_rate = train_config['learning_rate']
-    activation = train_config.get('activation', 'relu')
-    batch_norm = train_config.get('batch_norm', False)
+    activation = train_config.get('activation', 'Silu')
+    batch_norm = train_config.get('batch_norm', True)
 
     vae_model = VAE_Lightning(
         input_dim=input_dim,
@@ -91,28 +49,29 @@ def train_vae(train_config):
         batch_norm=batch_norm
     )
 
-    # Set up callbacks and loggers for training
+    # Set up TensorBoard Logger
     output_dir = train_config['output_dir']
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    # Logger
-    logger = loggers.CSVLogger(output_dir, name=train_config['model_type'])
+    # TensorBoard Logger
+    tb_logger = pl_loggers.TensorBoardLogger(save_dir=output_dir, name=train_config['model_type'])
 
-    # Checkpoint and early stopping
-    checkpoint_monitor = train_config.get('checkpoint_monitor', 'val_loss')
+    # Set up model checkpointing and early stopping
+    checkpoint_monitor = train_config.get('checkpoint_monitor', 'Loss/val')
     checkpoint_mode = train_config.get('checkpoint_mode', 'min')
 
     checkpoint_callback = ModelCheckpoint(
         monitor=checkpoint_monitor,
         save_top_k=1,
         mode=checkpoint_mode,
-        dirpath=f'{logger.save_dir}/{logger.name}/version_{logger.version}/checkpoints/',
+        dirpath=f'{tb_logger.log_dir}/checkpoints/',
+        # dirpath=f'{logger.save_dir}/{logger.name}/version_{logger.version}/checkpoints/',
         filename='vae-{epoch:02d}-{val_loss:.2f}'
     )
-    
-    loss_history_callback = LossHistoryCallback()
+    # loss_history_callback = LossHistoryCallback()
+    # callbacks = [checkpoint_callback, loss_history_callback]
 
-    callbacks = [checkpoint_callback, loss_history_callback]
+    callbacks = [checkpoint_callback]
 
     if patience:
         early_stopping_callback = EarlyStopping(
@@ -120,10 +79,8 @@ def train_vae(train_config):
             patience=train_config.get('early_stopping_patience', patience)
         )
         callbacks.append(early_stopping_callback)
-        
 
-
-    # Setting up the trainer
+    # Set up the PyTorch Lightning Trainer
     trainer = pl.Trainer(
         max_epochs=train_config['max_epochs'],
         gradient_clip_val=train_config.get('gradient_clip_val', 0.1),
@@ -132,7 +89,7 @@ def train_vae(train_config):
         accelerator='gpu' if torch.cuda.is_available() else 'cpu',
         devices=1,
         deterministic=True,
-        logger=logger
+        logger=tb_logger  
     )
 
     # Train the model
