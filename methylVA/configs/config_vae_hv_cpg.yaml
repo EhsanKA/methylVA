@@ -10,16 +10,16 @@ hvcpg_selection:
 training_vae:
   # Config file for training and testing data loader
   train_test_loader:
-    train_data_path: "../data/dimension_reduction/highly_variable_features/train_data_filtered_0.1.csv"
-    train_metadata_path: "../data/dimension_reduction/highly_variable_features/train_metadata_with_labels.csv"
-    test_data_path: "../data/dimension_reduction/highly_variable_features/test_data_filtered_0.1.csv"
-    test_metadata_path: "../data/dimension_reduction/highly_variable_features/test_metadata_with_labels.csv"
+    train_data_path: "data/dimension_reduction/highly_variable_features/train_data_filtered_0.05.csv"
+    train_metadata_path: "data/dimension_reduction/highly_variable_features/train_metadata_with_labels.csv"
+    test_data_path: "data/dimension_reduction/highly_variable_features/test_data_filtered_0.05.csv"
+    test_metadata_path: "data/dimension_reduction/highly_variable_features/test_metadata_with_labels.csv"
     batch_size: 16
     seed: 42
 
   model_type: 'vae'
-  output_dir: 'experiments/data_hvc_0.1_vae'
-  checkpoint_monitor: 'val_loss'
+  output_dir: 'experiments/data_hvc_0.05_vae'
+  checkpoint_monitor: 'Val/loss'
   checkpoint_mode: 'min'
   hidden_dims: [2048, 1024, 512]
   latent_dim: 128
@@ -28,5 +28,5 @@ training_vae:
   dropout_rate: 0.2
   batch_norm: True
   learning_rate: 1.0e-6
-  max_epochs: 20
+  max_epochs: 100
   seed: 42
