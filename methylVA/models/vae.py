@@ -138,9 +138,9 @@ class VAE_Lightning(pl.LightningModule):
 
         print(f"Training loss: {loss.item()}")
 
-        self.log('Loss/train', loss, on_step=False, on_epoch=True)
-        self.log('BCE_loss/train', recon_loss, on_step=False, on_epoch=True)
-        self.log('KLD_loss/train', kl_loss, on_step=False, on_epoch=True)
+        self.log('Train/loss', loss, on_step=False, on_epoch=True)
+        self.log('Train/BCE_loss', recon_loss, on_step=False, on_epoch=True)
+        self.log('Train/KLD_loss', kl_loss, on_step=False, on_epoch=True)
 
 
         # Calculate and log gradient norm
@@ -179,9 +179,9 @@ class VAE_Lightning(pl.LightningModule):
         loss, recon_loss, kl_loss = self._vae_loss(x, x_hat, mu, logvar, mask, self.kl_weight)
         print(f"Validation loss: {loss.item()}")
 
-        self.log('Loss/val', loss, on_step=False, on_epoch=True)
-        self.log('BCE_loss/val', recon_loss, on_step=False, on_epoch=True)
-        self.log('KLD_loss/val', kl_loss, on_step=False, on_epoch=True)
+        self.log('Val/loss', loss, on_step=False, on_epoch=True)
+        self.log('Val/BCE_loss', recon_loss, on_step=False, on_epoch=True)
+        self.log('Val/KLD_loss', kl_loss, on_step=False, on_epoch=True)
   
 
     def _vae_loss(self, original_x, x_hat, mu, logvar, mask, kl_weight=1.0):
