@@ -57,7 +57,7 @@ def train_vae(train_config):
     tb_logger = pl_loggers.TensorBoardLogger(save_dir=output_dir, name=train_config['model_type'])
 
     # Set up model checkpointing and early stopping
-    checkpoint_monitor = train_config.get('checkpoint_monitor', 'Loss/val')
+    checkpoint_monitor = train_config.get('checkpoint_monitor', 'Val/loss')
     checkpoint_mode = train_config.get('checkpoint_mode', 'min')
 
     checkpoint_callback = ModelCheckpoint(
@@ -66,7 +66,8 @@ def train_vae(train_config):
         mode=checkpoint_mode,
         dirpath=f'{tb_logger.log_dir}/checkpoints/',
         # dirpath=f'{logger.save_dir}/{logger.name}/version_{logger.version}/checkpoints/',
-        filename='vae-{epoch:02d}-{val_loss:.2f}'
+        filename='vae-{epoch:02d}-{Val/loss:.2f}'
+
     )
     # loss_history_callback = LossHistoryCallback()
     # callbacks = [checkpoint_callback, loss_history_callback]
