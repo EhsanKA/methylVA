@@ -15,19 +15,26 @@ import numpy as np
 
 from methylVA.data_processing.dataset import get_methyl_data_loaders
 
-def train_vae(train_config):
 
-    # input_dir = train_config['input_dir']
-    data_loader_config = train_config['train_test_loader']
+
+
+def train_vae(train_config, train_loader=None, val_loader=None):
+
+
     kl_weight = train_config.get('kl_weight', 1.0)
     patience = train_config.get('early_stopping_patience', None)
-
-
-    train_loader, val_loader = get_methyl_data_loaders(data_loader_config)
 
     pl.seed_everything(42)
 
     data_batch, _ = next(iter(train_loader))
+
+
+    num_train_rows = len(train_loader.dataset)
+    num_val_rows = len(val_loader.dataset)
+
+    print("Number of features in each dataset:", data_batch.shape[1])
+    print("Number of rows in the training dataset:", num_train_rows)
+    print("Number of rows in the validation dataset:", num_val_rows)
 
     # Set up the VAE model
     input_dim = data_batch.shape[1]  # The number of input features
