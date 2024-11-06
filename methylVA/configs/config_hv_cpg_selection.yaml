@@ -1,6 +1,0 @@
-
-# Config file for selecting highly variable CpGs
-hvcpg_selection:
-  input_dir : "../data/v2_HM450/"
-  output_dir : "../data/dimension_reduction/highly_variable_features/"
-  thresholds : [0.01, 0.03 ,0.05, 0.1]
