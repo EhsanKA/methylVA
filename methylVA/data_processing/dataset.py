@@ -14,11 +14,24 @@ import torch
 from torch.utils.data import Dataset
 
 class MethylDataset(Dataset):
-    def __init__(self, csv_file_data, csv_file_metadata, transform=None):
-        # Load data from the CSV file and convert to numeric
-        self.data = pd.read_csv(csv_file_data, index_col=0)
-        self.metadata = pd.read_csv(csv_file_metadata)
-        self.labels = self.metadata['labels_encoded'].values
+    def __init__(self, data=None, metadata=None,
+                 pkl_file_data=None, pkl_file_metadata=None,
+                 transform=None
+                 ):
+        
+        if data is not None and metadata is not None:
+            self.data = data
+            self.metadata = metadata
+            self.labels = self.metadata['labels_encoded'].values
+        elif pkl_file_data is not None and pkl_file_metadata is not None:
+            self.data = pd.read_pickle(pkl_file_data)
+            self.data.set_index(self.data.columns[0], inplace=True)
+
+            self.metadata = pd.read_pickle(pkl_file_metadata)
+            self.labels = self.metadata['labels_encoded'].values
+        else:
+            raise ValueError("Either data and metadata or pkl files must be provided")
+            
         self.transform = transform
 
         # Check for unique problematic values
@@ -30,23 +43,6 @@ class MethylDataset(Dataset):
             print("Found NaN values in the data after conversion.")
             # print(self.data[self.data.isna().any(axis=1)])
 
-
-        # Flatten data to get all unique values
-        # unique_values = pd.Series(self.data.values.ravel()).dropna().unique()
-
-        # # Identify problematic values
-        # problematic_values = []
-        # for val in unique_values:
-        #     if np.isinf(val):
-        #         problematic_values.append(val)
-        #     elif isinstance(val, str) or isinstance(val, object):
-        #         problematic_values.append(val)
-
-        # # Print out the unique problematic values
-        # if problematic_values:
-        #     print("Unique problematic values found in data:", set(problematic_values))
-        # else:
-        #     print("No problematic values (Inf, -Inf, non-numeric) detected in data.")
 
     def __len__(self):
         # Returns the number of samples
@@ -71,7 +67,7 @@ class MethylDataset(Dataset):
 
 
 
-def get_methyl_data_loaders(config):
+def get_methyl_data_loaders(config,):
 
     # Create noise datasets
     train_data = MethylDataset(config['train_data_path'], config['train_metadata_path'])
@@ -82,3 +78,4 @@ def get_methyl_data_loaders(config):
     test_loader = DataLoader(test_data, batch_size=config['batch_size'], shuffle=False)
 
     return train_loader, test_loader
+
