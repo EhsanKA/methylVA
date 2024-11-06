@@ -1,6 +1,7 @@
 import pandas as pd
 import argparse
 from methylVA.utils.common import load_config
+import numpy as np
 
 
 from sklearn.model_selection import train_test_split
@@ -20,8 +21,10 @@ def select_HV_cpgs(config):
     data_files = [f'{input_dir}methyl_scores_v2_HM450k_{i}.pkl' for i in range(1, 12)]
     dataframes = [pd.read_pickle(file, compression="bz2") for file in data_files]
     df = pd.concat(dataframes, axis=0)
+
     # sample_size = 100  # Specify the number of rows to load
     # df = pd.read_pickle(data_files[3], compression="bz2").head(sample_size)
+
 
 
     metadata_columns = [
@@ -37,6 +40,7 @@ def select_HV_cpgs(config):
         metadata_columns + [label_column, sex_condition_column, age_condition_column],
         axis=1
     )
+    numerical_data = numerical_data.round(4).apply(lambda col: col.map(lambda x: np.float32(f"{x:.4f}")))
 
     # Fix FutureWarning
     df[label_column] = df[label_column].fillna('no_label')
@@ -61,6 +65,13 @@ def select_HV_cpgs(config):
         numerical_data_filtered, df_metadata, test_size=0.1, random_state=42, stratify=df_metadata['labels_encoded']
     )
 
+    print(" data_train shape: ", data_train.shape)
+    print(" data_test shape: ", data_test.shape)
+
+    print("Saving train and test metadata with labels ...")
+    meta_data_train.to_pickle(f'{output_dir}train_metadata_with_labels.pkl')
+    meta_data_test.to_pickle(f'{output_dir}test_metadata_with_labels.pkl')
+
     print("Calculating column variances ...")
     column_variances = data_train.var()
 
@@ -78,10 +89,8 @@ def select_HV_cpgs(config):
 
     for threshold in thresholds:
         print(f"Saving train data with variance > {threshold} ...")
-        data_train[column_variances.index[(column_variances>threshold)]].to_csv(f'{output_dir}train_data_filtered_{threshold}.csv')
+        data_train[column_variances.index[(column_variances>threshold)]].to_pickle(f'{output_dir}train_data_filtered_{threshold}.pkl')
         print(f"Saving test data with variance > {threshold} ...")
-        data_test[column_variances.index[(column_variances>threshold)]].to_csv(f'{output_dir}test_data_filtered_{threshold}.csv')
+        data_test[column_variances.index[(column_variances>threshold)]].to_pickle(f'{output_dir}test_data_filtered_{threshold}.pkl')
         
-    print("Saving train and test metadata with labels ...")
-    meta_data_train.to_csv(f'{output_dir}train_metadata_with_labels.csv')
-    meta_data_test.to_csv(f'{output_dir}test_metadata_with_labels.csv')
+
