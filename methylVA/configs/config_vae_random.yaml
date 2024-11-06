@@ -1,0 +1,27 @@
+set_seed: 42
+
+
+train_test_loader:
+  train_data_path: "data/random_data/train_data_900_1000.pkl"
+  train_metadata_path: "data/random_data/train_metadata_900_1000.pkl"
+  test_data_path: "data/random_data/test_data_100_1000.pkl"
+  test_metadata_path: "data/random_data/test_metadata_100_1000.pkl"
+  batch_size: 16
+  seed: 42
+
+
+training_vae:
+
+  model_type: 'vae'
+  output_dir: 'experiments/data_hvc_0.05_lat_32_vae'
+  checkpoint_monitor: 'Val/loss'
+  checkpoint_mode: 'min'
+  hidden_dims: [2048, 1024, 512]
+  latent_dim: 32
+  batch_size: 16
+  kl_weight: 1.0
+  dropout_rate: 0.0
+  batch_norm: True
+  learning_rate: 1.0e-6
+  max_epochs: 100
+  seed: 42

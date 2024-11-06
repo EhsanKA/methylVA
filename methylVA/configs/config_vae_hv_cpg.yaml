@@ -1,31 +1,31 @@
 set_seed: 42
 
-# Config file for selecting highly variable CpGs
-hvcpg_selection:
-  input_dir : "../data/v2_HM450/"
-  output_dir : "../data/dimension_reduction/highly_variable_features/"
-  thresholds : [0.01, 0.03 ,0.05, 0.1]
+# hvcpg_selection:
+#   input_dir : "data/v2_HM450/"
+#   output_dir : "data/dimension_reduction/highly_variable_features/"
+#   thresholds : [0.1, 0.05 ,0.03, 0.01]
+
+
+train_test_loader:
+  train_data_path: "data/dimension_reduction/highly_variable_features/train_data_filtered_0.05.csv"
+  train_metadata_path: "data/dimension_reduction/highly_variable_features/train_metadata_with_labels.csv"
+  test_data_path: "data/dimension_reduction/highly_variable_features/test_data_filtered_0.05.csv"
+  test_metadata_path: "data/dimension_reduction/highly_variable_features/test_metadata_with_labels.csv"
+  batch_size: 16
+  seed: 42
 
 
 training_vae:
-  # Config file for training and testing data loader
-  train_test_loader:
-    train_data_path: "data/dimension_reduction/highly_variable_features/train_data_filtered_0.05.csv"
-    train_metadata_path: "data/dimension_reduction/highly_variable_features/train_metadata_with_labels.csv"
-    test_data_path: "data/dimension_reduction/highly_variable_features/test_data_filtered_0.05.csv"
-    test_metadata_path: "data/dimension_reduction/highly_variable_features/test_metadata_with_labels.csv"
-    batch_size: 16
-    seed: 42
 
   model_type: 'vae'
-  output_dir: 'experiments/data_hvc_0.05_vae'
+  output_dir: 'experiments/data_hvc_0.05_lat_32_vae'
   checkpoint_monitor: 'Val/loss'
   checkpoint_mode: 'min'
   hidden_dims: [2048, 1024, 512]
-  latent_dim: 128
+  latent_dim: 32
   batch_size: 16
   kl_weight: 1.0
-  dropout_rate: 0.2
+  dropout_rate: 0.0
   batch_norm: True
   learning_rate: 1.0e-6
   max_epochs: 100
