@@ -28,7 +28,7 @@ class VAE(nn.Module):
             nn.SiLU(),
             nn.Linear(hidden_dim // 4, hidden_dim // 8),
             nn.SiLU(),
-            nn.Linear(hidden_dim // 8, latent_dim * 2), # 2 for mean and variance
+            nn.Linear(hidden_dim // 8, latent_dim), # 2 for mean and variance
         )
         self.softplus = nn.Softplus()
 
@@ -88,7 +88,7 @@ class VAE(nn.Module):
         """
         return self.decoder(z)
     
-    def forward(self, x, compute_loss: bool = True):
+    def forward(self, x, kl_loss_weight=1.0, compute_loss: bool = True):
         """
         Forward pass of the VAE model.
 
@@ -120,7 +120,6 @@ class VAE(nn.Module):
             loc=torch.zeros_like(z, device=z.device),
             scale_tril=torch.eye(z.size(-1), device=z.device).unsqueeze(0).expand(z.size(0), -1, -1),
         )
-        kl_loss_weight = 1.0
 
         loss_kl = torch.distributions.kl.kl_divergence(dist, std_normal).mean()
         loss_kl = kl_loss_weight * loss_kl
