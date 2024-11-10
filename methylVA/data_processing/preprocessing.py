@@ -13,10 +13,6 @@ def select_HV_cpgs(config):
     output_dir = config['output_dir']
 
     
-    print("Loading a sample of raw data for testing, dropping NaNs, and selecting highly variable CpGs...")
-    data_files = [f'{input_dir}methyl_scores_v2_HM450k_{i}.pkl' for i in range(1, 12)]
-
-
     print("Loading raw data, dropping nans, and select highly variable cpgs ...")
     data_files = [f'{input_dir}methyl_scores_v2_HM450k_{i}.pkl' for i in range(1, 12)]
     dataframes = [pd.read_pickle(file, compression="bz2") for file in data_files]
@@ -40,7 +36,7 @@ def select_HV_cpgs(config):
         metadata_columns + [label_column, sex_condition_column, age_condition_column],
         axis=1
     )
-    numerical_data = numerical_data.round(4).apply(lambda col: col.map(lambda x: np.float32(f"{x:.4f}")))
+    # numerical_data = numerical_data.round(4).apply(lambda col: col.map(lambda x: np.float32(f"{x:.4f}")))
 
     # Fix FutureWarning
     df[label_column] = df[label_column].fillna('no_label')
