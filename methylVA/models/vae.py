@@ -137,6 +137,8 @@ class VAE_Lightning(pl.LightningModule):
         loss, recon_loss, kl_loss = self._vae_loss(x, x_hat, mu, logvar, mask, self.kl_weight)
 
         print(f"Training loss: {loss.item()}")
+    
+        # self.logger.experiment.add_scalars('loss', {'train': loss},self.global_step) 
 
         self.log('Train/loss', loss, on_step=False, on_epoch=True)
         self.log('Train/BCE_loss', recon_loss, on_step=False, on_epoch=True)
