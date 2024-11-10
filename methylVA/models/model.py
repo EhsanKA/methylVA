@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from methylVA.mnist.vae_output import VAEOutput
+from methylVA.models.vae_output import VAEOutput
 
 class VAE(nn.Module):
     """
@@ -137,7 +137,7 @@ class VAE(nn.Module):
     
 
 
-from methylVA.mnist.vae_output import AEOutput
+from methylVA.models.vae_output import AEOutput
 
 class AE(nn.Module):
     """

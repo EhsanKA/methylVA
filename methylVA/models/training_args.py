@@ -3,7 +3,7 @@ from datetime import datetime
 import torch
 from torch.utils.tensorboard import SummaryWriter
 
-from methylVA.mnist.model import VAE
+from methylVA.models.model import VAE
 
 def training_args():
     """
