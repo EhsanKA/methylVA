@@ -91,13 +91,13 @@ def test(model, dataloader, cur_step, batch_size=128, writer=None):
         writer.add_scalar('Loss/KLD', output.loss_kl.item(), global_step=cur_step)
 
         # log reconstructions
-        writer.add_images('Test/Reconstructions', output.x_recon.view(-1, 1, 28, 28), global_step=cur_step)
-        writer.add_images('Test/Originals', data.view(-1, 1, 28, 28), global_step=cur_step)
+        # writer.add_images('Test/Reconstructions', output.x_recon.view(-1, 1, 28, 28), global_step=cur_step)
+        # writer.add_images('Test/Originals', data.view(-1, 1, 28, 28), global_step=cur_step)
 
         # log random samples from the latent space
-        z = torch.randn(16, model.latent_dim).to(model.device)
-        samples = model.decode(z)
-        writer.add_images('Test/Samples', samples.view(-1, 1, 28, 28), global_step=cur_step)
+        # z = torch.randn(16, model.latent_dim).to(model.device)
+        # samples = model.decode(z)
+        # writer.add_images('Test/Samples', samples.view(-1, 1, 28, 28), global_step=cur_step)
 
 
 
